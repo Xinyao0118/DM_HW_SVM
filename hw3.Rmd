@@ -70,7 +70,7 @@ plot(best.radial,test)
 #(c) Construct a classifier using AdaBoost algorithm (with 50 boosting iterations) with decision stumps as weak learners.
 
 ```{r}
-set.seed(1234)
+set.seed(12345678)
 adaboost.model = ada(yc~ys+xs, data=train,type = "discrete",iter = 50)
 pred.ada = predict(adaboost.model,test[-3])
 #test error
@@ -90,11 +90,11 @@ res
 
 ##Disscusion
 
-The result shows that AdaBoost algorithm has better performance. The decreasing rank of prediction performance measured by test error and its standard error is : AdaBoost algorithm > support vector classifier with Radial kernel > linear support vector classifier.
+The result shows that support vector classifier with Radial kernel has better performance. The decreasing rank of prediction performance measured by test error and its standard error is : support vector classifier with Radial kernel > AdaBoost algorithm > linear support vector classifier.
 
-However, the performance of AdaBoost algorithm will change due to the randomly boosting.
+Also, the performance of AdaBoost algorithm will change due to the randomly boosting.
 
-But in this case, we may choose AdaBoost algorithm for training binary outcome data, which helps build a precise model.
+So in this case, we may choose support vector classifier with Radial kernel for training binary outcome data, which helps build a stably precise model.
 
 
 
