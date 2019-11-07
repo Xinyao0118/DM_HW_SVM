@@ -1,0 +1,105 @@
+---
+title: "hw3"
+author: "uni:xw2598"
+date: "2019/11/3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(e1071)#svm
+library(caret)#select tuning parameters
+library(ada)
+```
+
+(a) Construct a linear support vector classifier.
+(b) Construct a support vector classifier with Radial kernel.
+(c) Construct a classifier using AdaBoost algorithm (with 50 boosting iterations) with decision stumps as weak learners.
+
+Select the tuning parameter involved in SVM models appropriately. For each method, compute the test error and its standard error on the test set (synth.te). Provide a simple graphical visualization of the produced classification models (i.e. something similar to Figure 2.2 in the textbook [ESL]) and discuss your results.
+
+```{r}
+train = read_table2("synth.tr.txt")
+train$yc = as.factor(train$yc)
+test = read_table2("synth.te.txt")
+test$yc = as.factor(test$yc)
+y.tr = train$yc
+y = test$yc
+x.tr = dplyr::select(train,-yc)
+```
+
+#(a) Construct a linear support vector classifier.
+```{r}
+linear.tune = tune.svm(yc~ys+xs, data=train, kernel="linear", cost=c(0.001, 0.01, 0.1, 1,10,100,1000))
+summary(linear.tune)
+#Best tuning parameter C=0.1
+best.linear = linear.tune$best.model
+tune.test = predict(best.linear, newdata=test[-3])
+#prediction table
+table(tune.test, as.factor(test$yc))
+#test error
+linear.mse = sum((as.numeric(y)-as.numeric(tune.test))^2)/dim(test)[1]
+#standard error
+linear.se = sd((as.numeric(y)-as.numeric(tune.test))^2)/sqrt(dim(test)[1])
+tibble(te = linear.mse,se = linear.se)
+plot(best.linear,test)
+
+```
+
+#(b) Construct a support vector classifier with Radial kernel.
+
+```{r}
+radial.tune = tune.svm(yc~ys+xs, data=train, kernel="radial",
+                       gamma = c(0.01,0.1,0.5,1,10,100),
+                       cost=c(0.001, 0.01, 0.1, 1,10,100))
+summary(radial.tune)
+#Best tuning parameter C=10,gamma = 1
+best.radial = radial.tune$best.model
+pred.radial = predict(best.radial, newdata=test[-3])
+#prediction table
+table(pred.radial, as.factor(test$yc))
+#test error
+radial.mse = sum((as.numeric(y)-as.numeric(pred.radial))^2)/dim(test)[1]
+#standard error
+radial.se = sd((as.numeric(y)-as.numeric(pred.radial))^2)/sqrt(dim(test)[1])
+tibble(te = radial.mse,se = radial.se)
+plot(best.radial,test)
+```
+
+#(c) Construct a classifier using AdaBoost algorithm (with 50 boosting iterations) with decision stumps as weak learners.
+
+```{r}
+set.seed(1234)
+adaboost.model = ada(yc~ys+xs, data=train,type = "discrete",iter = 50)
+pred.ada = predict(adaboost.model,test[-3])
+#test error
+ada.mse = sum((as.numeric(y)-as.numeric(pred.ada))^2)/dim(test)[1]
+#standard error
+ada.se = sd((as.numeric(y)-as.numeric(pred.ada))^2)/sqrt(dim(test)[1])
+tibble(te = ada.mse,se = ada.se)
+plot(adaboost.model)
+```
+
+```{r}
+res = tibble(te = c(linear.mse,radial.mse,ada.mse),se = c(linear.se,radial.se,ada.se))
+res = t(res)
+colnames(res) = c("linear","radial","adaboost")
+res
+```
+
+##Disscusion
+
+The result shows that AdaBoost algorithm has better performance. The decreasing rank of prediction performance measured by test error and its standard error is : AdaBoost algorithm > support vector classifier with Radial kernel > linear support vector classifier.
+
+However, the performance of AdaBoost algorithm will change due to the randomly boosting.
+
+But in this case, we may choose AdaBoost algorithm for training binary outcome data, which helps build a precise model.
+
+
+
+
+
+
+
+
